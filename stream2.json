@@ -1,0 +1,52 @@
+{
+  "job": {
+    "content": [
+      {
+        "reader":{
+          "parameter":{
+            "jdbcUrl":"jdbc:oracle:thin:@10.8.0.114:1521:orcl",
+            "username":"logminer_test001",
+            "password":"bsoft123456",
+            "table":[
+              "PORTAL_HIS.AMESS"
+            ],
+            "cat":"UPDATE,INSERT,DELETE",
+            "startSCN":"",
+            "readPosition":"time",
+            "startTime":1623745535241,
+            "pavingData":true,
+            "queryTimeout":300
+          },
+          "name":"oraclelogminerreader"
+        },
+        "writer": {
+          "name": "oraclewriter",
+          "parameter": {
+            "username": "portal_his",
+            "password": "bsoft123456",
+            "connection": [
+              {
+                "jdbcUrl": "jdbc:oracle:thin:@10.8.0.114:1521:orcl",
+                "table": ["BBP1230.ATEST2"]
+              }
+            ],
+            "preSql": [""],
+            "postSql": [""],
+            "writeMode": "insert",
+            "column": ["ID2","NAME","AGE"],
+            "batchSize": 1024
+          }
+        }
+      }
+    ],
+    "setting": {
+      "restore": {
+        "isRestore" : true,
+        "isStream" : true
+      },
+      "speed": {
+        "channel": 1
+      }
+    }
+  }
+}

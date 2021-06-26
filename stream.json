@@ -1,0 +1,51 @@
+{
+  "job":{
+    "setting":{
+      "speed":{
+        "channel":1,
+        "bytes":0
+      },
+      "errorLimit":{
+        "record":1,
+        "percentage":50
+      }
+    },
+    "content":[
+      {
+        "reader":{
+          "name":"binlogreader",
+          "parameter":{
+            "username":"root",
+            "password":"admin",
+            "cat":"DELETE,INSERT,UPDATE",
+            "port":3306,
+            "start":{
+              "journalName":"",
+              "timestamp":"1623003971000",
+              "position":4
+            },
+            "host":"127.0.0.1",
+            "table":[
+              "flinx_user"
+            ],
+            "pavingData":true,
+            "jdbcUrl":"jdbc:mysql://127.0.0.1:3306/test"
+          }
+        },
+        "writer": {
+          "parameter": {
+            "writeMode": "overwrite",
+            "partitionType": "DAY",
+            "tablesColumn" : "{\"flinx_user2\":[{\"type\":\"VARCHAR2\",\"table\":\"flinx_user\"},{\"type\":\"VARCHAR2\",\"key\":\"id\",\"oldKey\":\"id\"},{\"type\":\"VARCHAR2\",\"key\":\"name\",\"comment\":\"name\"},{\"type\":\"VARCHAR2\",\"key\":\"sex\",\"comment\":\"sex\"}]}",
+            "partition": "pt",
+            "jdbcUrl":"jdbc:mysql://127.0.0.1:3306/shop",
+            "charsetName": "utf-8",
+            "username": "root",
+            "password":"admin"
+          },
+          "name": "binlogmysqlwriter"
+        }
+      }
+    ]
+  }
+}
