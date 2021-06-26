@@ -36,7 +36,7 @@
           "parameter": {
             "writeMode": "overwrite",
             "partitionType": "DAY",
-            "tablesColumn" : "{\"flinx_user2\":[{\"type\":\"VARCHAR2\",\"table\":\"flinx_user\"},{\"type\":\"VARCHAR2\",\"key\":\"id\",\"oldKey\":\"id\"},{\"type\":\"VARCHAR2\",\"key\":\"name\",\"comment\":\"name\"},{\"type\":\"VARCHAR2\",\"key\":\"sex\",\"comment\":\"sex\"}]}",
+            "tablesColumn" : "{\"flinx_user2\":[{\"type\":\"VARCHAR2\",\"table\":\"flinx_user\",\"key\":\"id\"},{\"type\":\"VARCHAR2\",\"key\":\"id\",\"oldKey\":\"id\"},{\"type\":\"VARCHAR2\",\"key\":\"name\",\"comment\":\"name\"},{\"type\":\"VARCHAR2\",\"key\":\"sex\",\"comment\":\"sex\"}]}",
             "partition": "pt",
             "jdbcUrl":"jdbc:mysql://127.0.0.1:3306/shop",
             "charsetName": "utf-8",

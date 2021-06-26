@@ -35,6 +35,10 @@ import org.slf4j.LoggerFactory;
 
 import java.security.PrivilegedAction;
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -144,6 +148,91 @@ public final class BinlogWriterDbUtil {
         }
 
         return false;
+    }
+
+    /**
+     * @author zhangchm
+     * @date 2021-06-26 15:23
+     * @param type:插入、删除、更新
+     * @param resourceMap:数据源map
+     * @param tableColumn:写入数据库表的字段
+     * @param targetTable:写入数据库表的名称
+     * @param mainKey:写入数据库表的主键
+     * @return
+     * @explain说明:获取插入、删除、更新的sql
+     */
+    public static String getDataSql(String type, Map resourceMap, List<Map<String, Object>> tableColumn,String targetTable,String mainKey){
+        if (type.equals("DELETE")){
+            String id=resourceMap.get("before_id")==null ? "":resourceMap.get("before_id").toString();//取出数据源的id值
+            //获取目标表
+            String sql="delete from "+targetTable+" where "+mainKey+"='"+id+"";
+            return sql;
+        }else if (type.equals("INSERT")){
+            StringBuffer sql=new StringBuffer("insert into "+targetTable+"");
+            StringBuffer columnSql=new StringBuffer("(");
+            StringBuffer valueSql=new StringBuffer("(");
+            for (int i = 0; i < tableColumn.size(); i++) {//首先拼接字段
+                //column 字段
+                Map<String, Object> columnMap = tableColumn.get(i);
+                if (columnMap.containsKey("table")) {
+                    continue;
+                }
+                String nowColumn = columnMap.get("key").toString();//字段
+                String valueKey = "after_" + nowColumn;//字段转换
+                String value = String.valueOf(resourceMap.get(valueKey));//取值
+                if (columnMap.get("type").toString().equals("Date")) {//时间特殊处理
+                    //mysql不需要处理
+                } else {
+                    if (i == tableColumn.size() - 1) {
+                        columnSql.append(nowColumn);
+                        valueSql.append(value);
+                    } else {
+                        columnSql.append(nowColumn).append(",");
+                        valueSql.append(value).append(",");
+                    }
+                }
+                columnSql.append(") ");
+                valueSql.append(")");
+            }
+            sql.append(columnSql).append("values").append(valueSql);
+            return sql.toString();
+        }else if(type.equals("UPDATE")){
+            StringBuffer sql=new StringBuffer("update "+targetTable+"set ");
+            StringBuffer updateSql=new StringBuffer("");
+            for (int i = 0; i < tableColumn.size(); i++) {//首先拼接字段
+                //column 字段
+                Map<String, Object> columnMap = tableColumn.get(i);
+                if (columnMap.containsKey("table")) {
+                    continue;
+                }
+                String nowColumn = columnMap.get("key").toString();//字段
+                String valueKey = "after_" + nowColumn;//字段转换
+                String value = String.valueOf(resourceMap.get(valueKey));//取值
+                if (tableColumn.size()-1==i){
+                    updateSql.append(nowColumn+"="+value);
+                }else {
+                    updateSql.append(nowColumn+"="+value+",");
+                }
+            }
+            String id=resourceMap.get("before_id")==null ? "":resourceMap.get("before_id").toString();//取出数据源的id值
+            sql.append(updateSql).append(" where "+mainKey+"="+id);
+            return sql.toString();
+        }
+        return "";
+    }
+
+    private static Date getStringToDate(String str) {
+        if (StringUtils.isEmpty(str)){
+            return null;
+        }
+        Date date=null;
+        try {
+            SimpleDateFormat dateFormat=new SimpleDateFormat("YYYY-MM-DD HH:MM:SS");
+            date=dateFormat.parse(str);
+        }catch (Exception e){
+
+        }
+        return date;
     }
 
     private static String getKeytab(Map<String, Object> hiveConf){
