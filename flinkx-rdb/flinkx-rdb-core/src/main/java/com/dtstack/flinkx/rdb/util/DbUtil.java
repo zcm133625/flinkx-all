@@ -138,6 +138,8 @@ public class DbUtil {
     public static Connection getConnection(String url, String username, String password) throws SQLException {
         if (!url.startsWith(ConstantValue.PROTOCOL_JDBC_MYSQL)) {
             return getConnectionInternal(url, username, password);
+        }else if (!url.startsWith(ConstantValue.PROTOCOL_JDBC_ORACLE)){
+            return getConnectionInternal(url, username, password);
         } else {
             boolean failed = true;
             Connection dbConn = null;

@@ -13,6 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>flinkx-oraclelogminer-reader</module>
+        <module>flinkx-oraclelogminer-oraclewriter</module>
     </modules>
 
     <dependencies>
