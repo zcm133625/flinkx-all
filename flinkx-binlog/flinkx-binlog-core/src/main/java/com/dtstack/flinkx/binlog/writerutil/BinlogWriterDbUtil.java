@@ -165,7 +165,7 @@ public final class BinlogWriterDbUtil {
         if (type.equals("DELETE")){
             String id=resourceMap.get("before_id")==null ? "":resourceMap.get("before_id").toString();//取出数据源的id值
             //获取目标表
-            String sql="delete from "+targetTable+" where "+mainKey+"='"+id+"";
+            String sql="delete from "+targetTable+" where "+mainKey+"='"+id+"'";
             return sql;
         }else if (type.equals("INSERT")){
             StringBuffer sql=new StringBuffer("insert into "+targetTable+"");
@@ -185,19 +185,19 @@ public final class BinlogWriterDbUtil {
                 } else {
                     if (i == tableColumn.size() - 1) {
                         columnSql.append(nowColumn);
-                        valueSql.append(value);
+                        valueSql.append("'"+value+"'");
                     } else {
                         columnSql.append(nowColumn).append(",");
-                        valueSql.append(value).append(",");
+                        valueSql.append("'"+value+"'").append(",");
                     }
                 }
-                columnSql.append(") ");
-                valueSql.append(")");
             }
+            columnSql.append(") ");
+            valueSql.append(")");
             sql.append(columnSql).append("values").append(valueSql);
             return sql.toString();
         }else if(type.equals("UPDATE")){
-            StringBuffer sql=new StringBuffer("update "+targetTable+"set ");
+            StringBuffer sql=new StringBuffer("update "+targetTable+" set ");
             StringBuffer updateSql=new StringBuffer("");
             for (int i = 0; i < tableColumn.size(); i++) {//首先拼接字段
                 //column 字段
@@ -209,13 +209,13 @@ public final class BinlogWriterDbUtil {
                 String valueKey = "after_" + nowColumn;//字段转换
                 String value = String.valueOf(resourceMap.get(valueKey));//取值
                 if (tableColumn.size()-1==i){
-                    updateSql.append(nowColumn+"="+value);
+                    updateSql.append(nowColumn+"='"+value+"'");
                 }else {
-                    updateSql.append(nowColumn+"="+value+",");
+                    updateSql.append(nowColumn+"='"+value+"'"+",");
                 }
             }
             String id=resourceMap.get("before_id")==null ? "":resourceMap.get("before_id").toString();//取出数据源的id值
-            sql.append(updateSql).append(" where "+mainKey+"="+id);
+            sql.append(" ").append(updateSql).append(" where "+mainKey+"='"+id+"'");
             return sql.toString();
         }
         return "";
@@ -233,19 +233,6 @@ public final class BinlogWriterDbUtil {
 
         }
         return date;
-    }
-
-    private static String getKeytab(Map<String, Object> hiveConf){
-        String keytab = MapUtils.getString(hiveConf, KerberosUtil.KEY_PRINCIPAL_FILE);
-        if(StringUtils.isEmpty(keytab)){
-            keytab = MapUtils.getString(hiveConf, HIVE_SERVER2_AUTHENTICATION_KERBEROS_KEYTAB_KEY);
-        }
-
-        if(StringUtils.isNotEmpty(keytab)){
-            return keytab;
-        }
-
-        throw new IllegalArgumentException("can not find keytab from hiveConf");
     }
 
     public static Connection connect(ConnectionInfo connectionInfo) {

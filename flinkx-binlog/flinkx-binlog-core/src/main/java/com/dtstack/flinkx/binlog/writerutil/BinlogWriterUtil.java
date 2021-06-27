@@ -38,11 +38,6 @@ public class BinlogWriterUtil {
 
     public static final String LEFT_BRACKETS = "(";
 
-    private static final String CREATE_PARTITION_TEMPLATE = "alter table %s add if not exists partition (%s)";
-    private static final String CREATE_DIRTY_DATA_TABLE_TEMPLATE = "CREATE TABLE IF NOT EXISTS dirty_%s (event STRING, error STRING, created STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\u0001' LINES TERMINATED BY '\\n' STORED AS TEXTFILE";
-
-    private static final String NO_SUCH_TABLE_EXCEPTION = "NoSuchTableException";
-
     private final List<String> tableExistException = Arrays.asList("TableExistsException", "AlreadyExistsException", "TableAlreadyExistsException");
 
     public final static String TABLE_COLUMN_KEY = "key";
@@ -108,58 +103,7 @@ public class BinlogWriterUtil {
         this.connectionInfo = connectionInfo;
     }
 
-    public void createHiveTableWithTableInfo(TableInfo tableInfo) {
-        Connection connection = null;
-        try {
-            connection = BinlogWriterDbUtil.getConnection(connectionInfo);
-            createTable(connection, tableInfo);
-            fillTableInfo(connection, tableInfo);
-        } catch (Exception e) {
-            logger.error("", e);
-            throw e;
-        } finally {
-            BinlogWriterDbUtil.closeDbResources(null, null, connection);
-        }
-    }
 
-    /**
-     * 创建hive的分区
-     */
-    public void createPartition(TableInfo tableInfo, String partition) {
-        Connection connection = null;
-        try {
-            connection = BinlogWriterDbUtil.getConnection(connectionInfo);
-            String sql = String.format(CREATE_PARTITION_TEMPLATE, tableInfo.getTablePath(), partition);
-            BinlogWriterDbUtil.executeSqlWithoutResultSet(connectionInfo, connection, sql);
-        } catch (Exception e) {
-            logger.error("", e);
-            throw e;
-        } finally {
-            BinlogWriterDbUtil.closeDbResources(null, null, connection);
-        }
-    }
-
-    /**
-     * 表如果存在不要删除之前的表因为可能是用户的表，所以也不需要再创建，也不用 throw exception，暂时只有日志
-     *
-     * @param connection
-     * @param tableInfo
-     */
-    private void createTable(Connection connection, TableInfo tableInfo) {
-        try {
-            String sql = String.format(tableInfo.getCreateTableSql(), tableInfo.getTablePath());
-            BinlogWriterDbUtil.executeSqlWithoutResultSet(connectionInfo, connection, sql);
-        } catch (Exception e) {
-            if (!isTableExistsException(e.getMessage())) {
-                logger.error("create table happens error:", e);
-                throw new RuntimeException("create table happens error", e);
-            } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Not need create table:{}, it's already exist", tableInfo.getTablePath());
-                }
-            }
-        }
-    }
 
     private boolean isTableExistsException(String message){
         if (message == null) {
@@ -173,53 +117,6 @@ public class BinlogWriterUtil {
         }
 
         return false;
-    }
-
-    private void fillTableInfo(Connection connection, TableInfo tableInfo) {
-        try {
-            HiveReleaseVersion hiveVersion = getHiveVersion(connection);
-            AbstractHiveMetadataParser metadataParser = getMetadataParser(hiveVersion);
-
-            List<Map<String, Object>> result = BinlogWriterDbUtil.executeQuery(connection, "desc formatted " + tableInfo.getTablePath());
-            metadataParser.fillTableInfo(tableInfo, result);
-        } catch (Exception e) {
-            logger.error("{}", e);
-            if (e.getMessage().contains(NO_SUCH_TABLE_EXCEPTION)) {
-                throw new RuntimeException(String.format("表%s不存在", tableInfo.getTablePath()));
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    private AbstractHiveMetadataParser getMetadataParser(HiveReleaseVersion hiveVersion){
-        if (HiveReleaseVersion.APACHE_2.equals(hiveVersion) || HiveReleaseVersion.APACHE_1.equals(hiveVersion)) {
-            return new Apache2MetadataParser();
-        } else {
-            return new Cdh2BinlogMysqlMetadataParser();
-        }
-    }
-
-    public HiveReleaseVersion getHiveVersion(Connection connection){
-        HiveReleaseVersion version = HiveReleaseVersion.APACHE_2;
-        try (ResultSet resultSet = connection.createStatement().executeQuery("select version()")) {
-            if (resultSet.next()) {
-                String versionMsg = resultSet.getString(1);
-                if (versionMsg.contains(HiveReleaseVersion.CDH_1.getName())){
-                    // 结果示例：2.1.1-cdh6.3.1 re8d55f408b4f9aa2648bc9e34a8f802d53d6aab3
-                    if (versionMsg.startsWith(HiveReleaseVersion.CDH_2.getVersion())) {
-                        version = HiveReleaseVersion.CDH_2;
-                    } else if(versionMsg.startsWith(HiveReleaseVersion.CDH_1.getVersion())){
-                        version = HiveReleaseVersion.CDH_1;
-                    }
-                } else {
-                    // FIXME spark thrift server不支持 version()函数，所以使用默认的版本
-                }
-            }
-        } catch (Exception ignore) {
-        }
-
-        return version;
     }
 
     public static String getCreateTableHql(TableInfo tableInfo) {
